@@ -7,7 +7,6 @@ import uuid
 import subprocess
 import requests
 
-
 # Safe directory creation
 temp_path = "temp"
 videos_path = os.path.join(temp_path, "videos")
@@ -16,18 +15,14 @@ videos_path = os.path.join(temp_path, "videos")
 if os.path.exists(temp_path) and not os.path.isdir(temp_path):
     os.remove(temp_path)
 
-# Now safely make the videos folder
+# Now safely make the videos and audio folders
 os.makedirs(videos_path, exist_ok=True)
+os.makedirs(os.path.join(temp_path, "audio"), exist_ok=True)
 
-print("✅ temp/videos directory is ready.")
-
+print("✅ temp/videos and temp/audio directories are ready.")
 
 app = Flask(__name__)
 CORS(app)
-
-# Create directories to store temporary files
-os.makedirs("temp/videos", exist_ok=True)
-os.makedirs("temp/audio", exist_ok=True)
 
 # Endpoint: Generate AI video from text
 @app.route("/generate", methods=["POST"])
@@ -42,12 +37,13 @@ def generate():
     audio_path = f"temp/audio/{video_id}.wav"
     output_path = f"temp/videos/{video_id}_final.mp4"
 
-    # Step 1: Generate video from text using ModelScope API (HuggingFace hosted)
+    # Step 1: Generate video using Hugging Face ModelScope API
     print("[INFO] Generating video...")
     modelscope_url = "https://api-inference.huggingface.co/models/damo-vilab/modelscope-text-to-video-synthesis"
     hf_token = os.getenv("HF_TOKEN")
     headers = {"Authorization": f"Bearer {hf_token}"}
     response = requests.post(modelscope_url, headers=headers, json={"inputs": prompt})
+    
     if response.status_code != 200:
         return jsonify({"error": "Video generation failed", "details": response.text}), 500
 
@@ -55,13 +51,14 @@ def generate():
     with open(video_path, "wb") as f:
         f.write(response.content)
 
-    # Step 2: Generate audio using Bark (open-source TTS)
+    # Step 2: Generate audio using Bark (TTS)
     print("[INFO] Generating audio...")
     tts_output = subprocess.run([
         "python3", "bark_infer.py",
         prompt,
         audio_path
     ], capture_output=True)
+    
     if tts_output.returncode != 0:
         return jsonify({"error": "Audio generation failed", "details": tts_output.stderr.decode()}), 500
 
@@ -75,5 +72,7 @@ def generate():
 
     return send_file(output_path, mimetype="video/mp4")
 
+# Proper Render-compatible app runner
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
