@@ -43,6 +43,11 @@ def generate():
     hf_token = os.getenv("HF_TOKEN")
     headers = {"Authorization": f"Bearer {hf_token}"}
     response = requests.post(modelscope_url, headers=headers, json={"inputs": prompt})
+
+    print(f"[INFO] HuggingFace response status code: {response.status_code}")
+    print(f"[INFO] HuggingFace response: {response.text[:200]}...")  # log the first 200 chars
+
+
     
     if response.status_code != 200:
         return jsonify({"error": "Video generation failed", "details": response.text}), 500
