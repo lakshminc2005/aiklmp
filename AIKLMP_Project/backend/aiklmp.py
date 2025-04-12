@@ -22,7 +22,7 @@ os.makedirs(os.path.join(temp_path, "audio"), exist_ok=True)
 print("✅ temp/videos and temp/audio directories are ready.")
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://aiklmp.netlify.app"])
 
 # Endpoint: Generate AI video from text
 @app.route("/generate", methods=["POST"])
