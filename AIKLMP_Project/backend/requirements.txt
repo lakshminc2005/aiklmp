@@ -1,8 +1,5 @@
 Flask
 flask-cors
 requests
-torchaudio
-transformers
-fastapi
-uvicorn[standard]
 gunicorn
+
